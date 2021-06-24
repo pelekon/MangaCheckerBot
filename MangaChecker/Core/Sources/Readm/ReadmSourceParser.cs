@@ -23,6 +23,8 @@ namespace MangaChecker.Core.Sources.Readm
                 "h1", true, "page-title");
             string? desc = isUpdate ? "" : HtmlContentHelper.GetTagContent(document, HtmlContentHelper.ContentSourceTag.Body,
                 "p", true, null, "p/span");
+            if (desc == null && !isUpdate)
+                desc = GetMulltiTagDescription(document);
             string imgUrl = isUpdate ? "" : ("https://readm.org" + HtmlContentHelper.GetTagPropertyContent(document, 
                 HtmlContentHelper.ContentSourceTag.Body, "img", "class", 
                 "series-profile-thumb", true, "src"));
@@ -30,7 +32,16 @@ namespace MangaChecker.Core.Sources.Readm
                 "div", "season-list-column", "div/div/div/div/div/table/tbody/tr/td/h6");
             var chapterList = ParseChapterList(chapters, title ?? "Unk");
             
-            return new SourceDataParserResult(title ?? "Unk", desc ?? "Unk", imgUrl, chapterList);
+            return new SourceDataParserResult(title ?? "Unk", desc ?? "Missing", imgUrl, chapterList);
+        }
+
+        private string? GetMulltiTagDescription(HtmlDocument document)
+        {
+            var desc = HtmlContentHelper.GetTagContentWithId(document, HtmlContentHelper.ContentSourceTag.Body, "p",
+                "tv-series-desc", "p", true);
+            if (desc?.StartsWith("\nCopyrights") ?? true)
+                return null;
+            return desc;
         }
     }
 }

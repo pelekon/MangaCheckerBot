@@ -47,7 +47,11 @@ namespace MangaChecker.Utility
                 var obj = collection[index];
                 if (className != null && !obj.HasClass(className)) continue;
                 if (childTag != null)
-                    possibleTargets.AddRange(obj.SelectNodes($"//{childTag}"));
+                {
+                    var nodes = obj.SelectNodes($"//{childTag}");
+                    if (nodes != null)
+                        possibleTargets.AddRange(nodes!);
+                }
                 else
                 {
                     possibleTargets.Add(obj);
@@ -102,6 +106,28 @@ namespace MangaChecker.Utility
                 nodes = nodes.Where(n => n.HasClass(tagClass));
 
             return nodes?.SelectMany(n => n.SelectNodes($"//{childTag}")).Select(n => n.InnerText).ToList();
+        }
+
+        public static string? GetTagContentWithId(HtmlDocument document, ContentSourceTag sourceTag, string tag,
+            string id, string? subTags = null, bool mergeContentOfAllChildren = false)
+        {
+            var sourceNode = GetSourceNode(document, sourceTag);
+            if (sourceNode == null) return null;
+
+            var nodes = sourceNode.SelectNodes($"//{tag}");
+            var target = nodes?.First(n => n.Id == id);
+            if (subTags != null && target != null)
+            {
+                var children = target.SelectNodes($"//{subTags}");
+                if ((children?.Count ?? 0) == 0) return null;
+                
+                var content = !mergeContentOfAllChildren ? 
+                    children![0].InnerText :
+                    (string.Join("\n", children!.Select(n => n.InnerText)));
+                return content;
+            }
+
+            return target?.InnerText;
         }
         
         private static HtmlNode? GetSourceNode(HtmlDocument document, ContentSourceTag sourceTag)
