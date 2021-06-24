@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
 using MangaChecker.Core.Defines.Common;
@@ -6,6 +7,7 @@ using MangaChecker.Core.Defines.DataProviders.Storage;
 
 namespace MangaChecker.Database.Mock
 {
+    [ExcludeFromCodeCoverage]
     public class MockDb : IMangaCheckerStorageDataProvider
     {
         private readonly Dictionary<string, IManga> _storage = new();
@@ -26,6 +28,11 @@ namespace MangaChecker.Database.Mock
             
             _storage.Add(manga.Name, manga);
             return true;
+        }
+
+        public Task RemoveMangaAsync(IManga manga)
+        {
+            throw new System.NotImplementedException();
         }
 
         public Task UpdateCurrentChapterAsync(IManga manga, float chapter)

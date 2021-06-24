@@ -12,6 +12,7 @@ namespace MangaChecker.Core.Defines.DataProviders.Storage
         IManga? GetManga(int id);
 
         bool AddManga(IManga manga);
+        Task RemoveMangaAsync(IManga manga);
 
         Task UpdateCurrentChapterAsync(IManga manga, float chapter);
         Task UpdateChaptersInfoAsync(IManga manga, float newestChapter, int amount);

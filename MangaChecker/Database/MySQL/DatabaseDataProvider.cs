@@ -69,6 +69,19 @@ namespace MangaChecker.Database.MySQL
             return true;
         }
 
+        public async Task RemoveMangaAsync(IManga manga)
+        {
+            var db = new MySQLDatabase();
+            var castedManga = manga as MangaEntity;
+            if (castedManga == null)
+                throw new Exception("[IMangaCheckerStorageDataProvider::RemoveManga] Failed to update manga! " +
+                                    "Reason: Storage entity and param type mismatch!");
+            
+            await db.BeginTransactionAsync(IsolationLevel.ReadCommitted);
+            await db.GetObservedMangasInfoTable().Where(m => m.MangaId == castedManga.MangaId).DeleteAsync();
+            await db.CommitTransactionAsync();
+        }
+
         public async Task UpdateCurrentChapterAsync(IManga manga, float chapter)
         {
             var db = new MySQLDatabase();
