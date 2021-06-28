@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 
 namespace MangaChecker.Core.Defines.Parser
 {
@@ -17,9 +18,15 @@ namespace MangaChecker.Core.Defines.Parser
             {
                 var components = ch.Split(" ");
                 var chapter = GetChapterFromComponents(components);
-                        
+
                 if (!chapter.HasValue)
-                    throw new Exception($"Failed to get chapter number for manga {mangaTitle}!");
+                {
+                    if (!IsBonusChapterWithoutNumber(components))
+                        throw new Exception(
+                            $"Failed to get chapter number for manga {mangaTitle}! Chapter string: {ch}");
+                    
+                    chapter = GetChapterNrForBonusChapter(chapters);
+                }
                         
                 chapters.Add((chapter.Value, ch));
             }
@@ -27,7 +34,7 @@ namespace MangaChecker.Core.Defines.Parser
             return chapters;
         }
         
-        protected float? GetChapterFromComponents(IEnumerable<string> components)
+        private float? GetChapterFromComponents(IEnumerable<string> components)
         {
             float? ch = null;
         
@@ -36,12 +43,29 @@ namespace MangaChecker.Core.Defines.Parser
                 // remove any not necessary characters from chapter number component
                 var clean = c.Replace(":", "").Replace("(", "")
                     .Replace(")", "");
+                if (clean.ToLower().Contains("v2"))
+                    clean = clean.ToLower().Replace("v2", "");
                 if (!float.TryParse(clean, NumberStyles.Float, CultureInfo.GetCultureInfo("en-EN"), out var res)) continue;
                 ch = res;
                 break;
             }
         
             return ch;
+        }
+
+        private bool IsBonusChapterWithoutNumber(IEnumerable<string> components)
+        {
+            var enumerable = components as string[] ?? components.ToArray();
+            return enumerable.Contains("Bonus") || enumerable.Contains("bonus");
+        }
+
+        private float GetChapterNrForBonusChapter(IList<(float, string)> chapters)
+        {
+            if (chapters.Count == 0)
+                return 0.5f;
+            
+            var last = chapters[^1];
+            return Math.Abs(last.Item1) - 1 + 0.55f;
         }
     }
 }
