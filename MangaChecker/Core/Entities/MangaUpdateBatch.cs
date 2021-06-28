@@ -36,7 +36,7 @@ namespace MangaChecker.Core.Entities
             {
                 var um = ToUpdate.First(m => pm.Equals(m));
 
-                if (um.AmountOfChapters != pm.AmountOfChapters || um.NewestChapter < pm.NewestChapter)
+                if ((um.AmountOfChapters != pm.AmountOfChapters || um.NewestChapter < pm.NewestChapter) && pm.AmountOfChapters != 0)
                     updatedMangas.Add(new UpdateResult(um, pm.NewestChapter, pm.AmountOfChapters));
             }
 

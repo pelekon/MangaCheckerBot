@@ -1,12 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Discord;
 using Discord.Commands;
-using MangaChecker.Core.DataFetching;
-using MangaChecker.Core.Defines;
 using MangaChecker.Core.Defines.DataProviders.Storage;
-using MangaChecker.Core.Entities;
-using MangaChecker.Core.Sources;
 
 namespace MangaChecker.Commands.Modules
 {
