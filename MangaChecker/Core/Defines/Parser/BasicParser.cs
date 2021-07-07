@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace MangaChecker.Core.Defines.Parser
 {
@@ -16,7 +17,7 @@ namespace MangaChecker.Core.Defines.Parser
         
             foreach (var ch in list)
             {
-                var components = ch.Split(" ");
+                var components = ch.Split(new char[] { ' ', '\u00A0'});
                 var chapter = GetChapterFromComponents(components);
 
                 if (!chapter.HasValue)
@@ -42,9 +43,12 @@ namespace MangaChecker.Core.Defines.Parser
             {
                 // remove any not necessary characters from chapter number component
                 var clean = c.Replace(":", "").Replace("(", "")
-                    .Replace(")", "");
-                if (clean.ToLower().Contains("v2"))
-                    clean = clean.ToLower().Replace("v2", "");
+                    .Replace(")", "").Replace("\u00A0", "");
+                Regex regex = new Regex("([0-9][vV][0-9]{0,2})|([0-9]{1,4}\\.[0-9][vV][0-9]{0,2})\\w+",
+                    RegexOptions.Compiled | RegexOptions.IgnoreCase);
+                MatchCollection matches = regex.Matches(clean);
+                if (matches.Count > 0)
+                    clean = CleanChapterStringFromVersion(clean) ?? clean;
                 if (!float.TryParse(clean, NumberStyles.Float, CultureInfo.GetCultureInfo("en-EN"), out var res)) continue;
                 ch = res;
                 break;
@@ -66,6 +70,14 @@ namespace MangaChecker.Core.Defines.Parser
             
             var last = chapters[^1];
             return Math.Abs(last.Item1) - 1 + 0.55f;
+        }
+
+        private string? CleanChapterStringFromVersion(string str)
+        {
+            var index = str.ToLower().IndexOf("v", StringComparison.Ordinal);
+            if (index > -1)
+                return str.Substring(0, index);
+            return null;
         }
     }
 }
