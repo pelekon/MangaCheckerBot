@@ -23,19 +23,19 @@ namespace MangaChecker.Database.MySQL
         
         public IManga? GetManga(string name)
         {
-            var db = new MySQLDatabase();
+            using var db = new MySQLDatabase();
             return db.GetObservedMangasInfoTable().First(m => m.Name == name);
         }
 
         public IManga? GetManga(int id)
         {
-            var db = new MySQLDatabase();
+            using var db = new MySQLDatabase();
             return db.GetObservedMangasInfoTable().First(m => m.MangaId == id);
         }
 
         public bool AddManga(IManga manga)
         {
-            var db = new MySQLDatabase();
+            using var db = new MySQLDatabase();
             var isPresent = false;
 
             try
@@ -71,7 +71,7 @@ namespace MangaChecker.Database.MySQL
 
         public async Task RemoveMangaAsync(IManga manga)
         {
-            var db = new MySQLDatabase();
+            await using var db = new MySQLDatabase();
             var castedManga = manga as MangaEntity;
             if (castedManga == null)
                 throw new Exception("[IMangaCheckerStorageDataProvider::RemoveManga] Failed to update manga! " +
@@ -84,7 +84,7 @@ namespace MangaChecker.Database.MySQL
 
         public async Task UpdateCurrentChapterAsync(IManga manga, float chapter)
         {
-            var db = new MySQLDatabase();
+            await using var db = new MySQLDatabase();
             var updated = manga as MangaEntity;
             if (updated == null)
                 throw new Exception("[IMangaCheckerStorageDataProvider::UpdateCurrentChapter] Failed to update manga! " +
@@ -99,7 +99,7 @@ namespace MangaChecker.Database.MySQL
 
         public async Task UpdateChaptersInfoAsync(IManga manga, float newestChapter, int amount)
         {
-            var db = new MySQLDatabase();
+            await using var db = new MySQLDatabase();
             var updated = manga as MangaEntity;
             if (updated == null)
                 throw new Exception("[IMangaCheckerStorageDataProvider::UpdateCurrentChapter] Failed to update manga! " +
@@ -115,7 +115,7 @@ namespace MangaChecker.Database.MySQL
 
         public void UpdateChaptersInfo(IEnumerable<(IManga manga, float newestChapter, int amount)> list)
         {
-            var db = new MySQLDatabase();
+            using var db = new MySQLDatabase();
             db.BeginTransaction(IsolationLevel.ReadCommitted);
             var table = db.GetObservedMangasInfoTable();
 
@@ -136,15 +136,20 @@ namespace MangaChecker.Database.MySQL
 
         public async Task<IEnumerable<IManga>> GetAllUnreadMangas()
         {
-            var table = new MySQLDatabase().GetObservedMangasInfoTable();
+            await using var db = new MySQLDatabase();
+            var table = db.GetObservedMangasInfoTable();
             return await table.Where(m => m.CurrentChapter < m.NewestChapter).ToListAsync();
         }
 
-        public IEnumerable<IManga> GetAll() => new MySQLDatabase().GetObservedMangasInfoTable().AsEnumerable();
+        public IEnumerable<IManga> GetAll()
+        {
+            using var db = new MySQLDatabase();
+            return db.GetObservedMangasInfoTable().ToList();
+        }
 
         public async Task<IBotSettings?> GetCurrentSettingsAsync(ulong serverId)
         {
-            var db = new MySQLDatabase();
+            await using var db = new MySQLDatabase();
             try
             {
                 return await db.GetServerSettingsTable().Where(r => r.ServerId == serverId).FirstAsync();
@@ -157,7 +162,7 @@ namespace MangaChecker.Database.MySQL
 
         public async Task AssignSettingsAsync(ulong serverId, ulong inputId, ulong outputId)
         {
-            var db = new MySQLDatabase();
+            await using var db = new MySQLDatabase();
             
             await db.BeginTransactionAsync(IsolationLevel.ReadCommitted);
             await db.InsertOrReplaceAsync(new ServerSettings()
