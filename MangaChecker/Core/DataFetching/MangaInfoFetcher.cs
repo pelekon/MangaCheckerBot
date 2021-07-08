@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
 using MangaChecker.Core.Defines;
+using MangaChecker.Core.Sources;
 
 namespace MangaChecker.Core.DataFetching
 {
@@ -17,6 +18,17 @@ namespace MangaChecker.Core.DataFetching
         }
 
         public async Task<SourceDataParserResult> FetchInfo(string url, IMangaSource source, bool isUpdateFetch)
+        {
+            var parsedResult = await SendRequestAndParseResult(url, source, isUpdateFetch);
+            if (parsedResult is not RedirectedSourceDataParserResult redirectedSource) 
+                return parsedResult;
+            
+            var newSource = MangaSourceFabric.Instance.ResolveSource(redirectedSource.RedirectUrl)!;
+            var newResult = await SendRequestAndParseResult(redirectedSource.RedirectUrl, newSource, false);
+            return new RedirectedSourceDataParserResult(newResult, redirectedSource.RedirectUrl, newSource);
+        }
+
+        private async Task<SourceDataParserResult> SendRequestAndParseResult(string url, IMangaSource source, bool isUpdateFetch)
         {
             try
             {

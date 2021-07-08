@@ -17,6 +17,7 @@ namespace MangaChecker.Core.Defines.DataProviders.Storage
         Task UpdateCurrentChapterAsync(IManga manga, float chapter);
         Task UpdateChaptersInfoAsync(IManga manga, float newestChapter, int amount);
         void UpdateChaptersInfo(IEnumerable<(IManga manga, float newestChapter, int amount)> list);
+        Task UpdateRedirectedManga(IManga oldData, IManga newData);
 
         Task<IEnumerable<IManga>> GetAllUnreadMangas();
 

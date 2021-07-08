@@ -42,8 +42,7 @@ namespace MangaChecker.Core.Defines.Parser
             foreach (var c in components)
             {
                 // remove any not necessary characters from chapter number component
-                var clean = c.Replace(":", "").Replace("(", "")
-                    .Replace(")", "").Replace("\u00A0", "");
+                var clean = ClearString(c);
                 Regex regex = new Regex("([0-9][vV][0-9]{0,2})|([0-9]{1,4}\\.[0-9][vV][0-9]{0,2})\\w+",
                     RegexOptions.Compiled | RegexOptions.IgnoreCase);
                 MatchCollection matches = regex.Matches(clean);
@@ -78,6 +77,12 @@ namespace MangaChecker.Core.Defines.Parser
             if (index > -1)
                 return str.Substring(0, index);
             return null;
+        }
+
+        protected string ClearString(string source)
+        {
+            return source.Replace(":", "").Replace("(", "")
+                .Replace(")", "").Replace("\u00A0", "");
         }
     }
 }

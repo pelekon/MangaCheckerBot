@@ -50,6 +50,11 @@ namespace MangaChecker.Database.Mock
             throw new System.NotImplementedException();
         }
 
+        public Task UpdateRedirectedManga(IManga oldData, IManga newData)
+        {
+            throw new System.NotImplementedException();
+        }
+
         public Task<IEnumerable<IManga>> GetAllUnreadMangas()
         {
             throw new System.NotImplementedException();

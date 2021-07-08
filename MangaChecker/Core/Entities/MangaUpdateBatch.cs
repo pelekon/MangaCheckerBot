@@ -10,6 +10,7 @@ namespace MangaChecker.Core.Entities
     {
         public List<IManga> ToUpdate { get; }
         public ConcurrentQueue<IManga> Processed { get; }
+        public ConcurrentQueue<(IManga oldData, IManga newData)> Redirected { get; }
         public bool IsDone { get; private set; }
         
         public event EventHandler<BatchDoneEventArgs> OnBatchUpdateDone = delegate {  };
@@ -18,13 +19,14 @@ namespace MangaChecker.Core.Entities
         {
             ToUpdate = toUpdate;
             Processed = new ConcurrentQueue<IManga>();
+            Redirected = new ConcurrentQueue<(IManga, IManga)>();
             IsDone = false;
         }
 
         public void MarkAsDone()
         {
             IsDone = true;
-            OnBatchUpdateDone.Invoke(this, new BatchDoneEventArgs(GetUpdatedMangas()));
+            OnBatchUpdateDone.Invoke(this, new BatchDoneEventArgs(GetUpdatedMangas(), Redirected));
         }
 
         private IReadOnlyCollection<UpdateResult> GetUpdatedMangas()
@@ -47,12 +49,15 @@ namespace MangaChecker.Core.Entities
     public class BatchDoneEventArgs : EventArgs
     {
         public IEnumerable<UpdateResult> ProcessedMangas { get; }
+        public IEnumerable<(IManga oldData, IManga newData)> RedirectedMangas { get; }
         public int AmountOfProcessedMangas { get; }
 
-        public BatchDoneEventArgs(IReadOnlyCollection<UpdateResult> processedMangas)
+        public BatchDoneEventArgs(IReadOnlyCollection<UpdateResult> processedMangas, 
+            IReadOnlyCollection<(IManga oldData, IManga newData)> redirectedMangas)
         {
             ProcessedMangas = processedMangas;
-            AmountOfProcessedMangas = processedMangas.Count;
+            RedirectedMangas = redirectedMangas;
+            AmountOfProcessedMangas = processedMangas.Count + redirectedMangas.Count;
         }
     }
 

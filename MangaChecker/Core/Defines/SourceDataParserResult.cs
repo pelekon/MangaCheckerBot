@@ -11,6 +11,7 @@ namespace MangaChecker.Core.Defines
 
         public bool IsFailed { get; }
         public string? FailReason { get; }
+        public bool WasRedirected { get; private set; }
 
         public SourceDataParserResult(string name, string description, string imageUrl, List<(float, string)> chaptersList,
             bool isFailed = false, string? failReason = null)
@@ -21,6 +22,9 @@ namespace MangaChecker.Core.Defines
             ChaptersList = chaptersList;
             IsFailed = isFailed;
             FailReason = failReason;
+            WasRedirected = false;
         }
+
+        public void MarkAsRedirected() => WasRedirected = true;
     }
 }

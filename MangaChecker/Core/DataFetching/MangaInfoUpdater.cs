@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using System.Timers;
 using Discord;
@@ -112,11 +111,19 @@ namespace MangaChecker.Core.DataFetching
 
             if (data.IsFailed)
                 await LogProcessError(manga.Name, data.FailReason ?? "Unknown");
+            else if (data is RedirectedSourceDataParserResult redirectedData)
+            {
+                var mangaId = redirectedData.NewSource!.GetMangaIdFromUrl(redirectedData.RedirectUrl);
+                var newFetchData = new FetchedMangaData(mangaId, redirectedData.Name, redirectedData.Description,
+                    manga.CurrentChapter, redirectedData.ChaptersList[0].Item1, redirectedData.ChaptersList.Count,
+                    redirectedData.NewSource.SourceType, redirectedData.ImageUrl);
+                batch.Redirected.Enqueue((manga, newFetchData));
+            }
             else
                 batch.Processed.Enqueue(new FetchedMangaData(manga, data.ChaptersList));
         }
         
-        private void OnOnBatchUpdateDone(object? sender, BatchDoneEventArgs e)
+        private async void OnOnBatchUpdateDone(object? sender, BatchDoneEventArgs e)
         {
             Console.WriteLine($"[{DateTime.Now}][MangaInfoUpdater::PerformBulkUpdate] OnBatchDone...");
             List<(IManga Manga, float newestChapter, int amount)> list = new(e.AmountOfProcessedMangas);
@@ -128,6 +135,12 @@ namespace MangaChecker.Core.DataFetching
             {
                 _storageDataProvider.UpdateChaptersInfo(list);
                 SendUpdateMessages(list);
+            }
+
+            foreach (var redirected in e.RedirectedMangas)
+            {
+                await _storageDataProvider.UpdateRedirectedManga(redirected.oldData, redirected.newData);
+                await SendRedirectMessage(redirected.newData, redirected.oldData);
             }
         }
 
@@ -141,7 +154,7 @@ namespace MangaChecker.Core.DataFetching
         {
             string newChPart = source.NewestChapter != chapter ? $"New chapter: **{chapter}**\n" : "";
             IMangaSource? mangaSource = MangaSourceFabric.Instance.GetSource(source.Source);
-            string desc = $"Manga **\"{ source.Name }**\" got update!\n" +
+            string desc = $"Manga **\"{ source.Name }\"** got update!\n" +
                           $"{mangaSource?.GetUrlWithMangaId(source.SiteMangaId) ?? ""}\n" +
                           $"{newChPart}Amount of chapters:\nPrevious: **{source.AmountOfChapters}** " +
                           $"Current: **{amount}**";
@@ -162,6 +175,26 @@ namespace MangaChecker.Core.DataFetching
                     message.Id, message.Author.Id, DateTime.Now, message.Channel.Id));
             });
             #pragma warning restore 4014
+        }
+
+        private async Task SendRedirectMessage(IManga source, IManga oldSource)
+        {
+            IMangaSource? mangaSource = MangaSourceFabric.Instance.GetSource(source.Source);
+            var desc = $"Manga **\"{source.Name}\"** has been redirected to new site!\n" +
+                       $"**New url**: {mangaSource!.GetUrlWithMangaId(source.SiteMangaId)}";
+            
+            if (oldSource.AmountOfChapters != source.AmountOfChapters)
+                desc += "\nAmount of chapters:\nPrevious: **{source.AmountOfChapters}**";
+            
+            EmbedBuilder builder = new EmbedBuilder()
+                .WithTitle("Manga redirection detected!")
+                .WithDescription(desc)
+                .WithColor(Color.DarkPurple);
+
+            if (source.MangaImage != null)
+                builder.WithImageUrl(source.MangaImage);
+            
+            await _messageBroadcaster.SendMessageAsync(builder.Build());
         }
 
         private IReadOnlyCollection<MangaUpdateBatch> PrepareUpdateBatches(IEnumerable<IManga> mangas)

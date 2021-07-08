@@ -134,6 +134,29 @@ namespace MangaChecker.Database.MySQL
             db.CommitTransaction();
         }
 
+        public async Task UpdateRedirectedManga(IManga oldData, IManga newData)
+        {
+            await using var db = new MySQLDatabase();
+            if (!(oldData is MangaEntity updated))
+                throw new Exception("[IMangaCheckerStorageDataProvider::UpdateRedirectedManga] Failed to update manga! " +
+                                    "Reason: Storage entity and param type mismatch!");
+            
+            await db.BeginTransactionAsync(IsolationLevel.ReadCommitted);
+            var table = db.GetObservedMangasInfoTable();
+            await table.Where(m => m.MangaId == updated.MangaId)
+                .Set(m => m.SiteMangaId, newData.SiteMangaId)
+                .Set(m => m.Name, newData.Name)
+                .Set(m => m.Description, newData.Description)
+                .Set(m => m.NewestChapter, newData.NewestChapter)
+                .Set(m => m.AmountOfChapters, newData.AmountOfChapters)
+                .Set(m => m.Source, newData.Source)
+                .Set(m => m.LastChaptersUpdate, DateTime.Now)
+                .Set(m => m.MangaImage, newData.MangaImage)
+                .UpdateAsync();
+
+            await db.CommitTransactionAsync();
+        }
+
         public async Task<IEnumerable<IManga>> GetAllUnreadMangas()
         {
             await using var db = new MySQLDatabase();
@@ -174,7 +197,5 @@ namespace MangaChecker.Database.MySQL
 
             await db.CommitTransactionAsync();
         }
-        
-        
     }
 }
