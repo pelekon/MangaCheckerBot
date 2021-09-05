@@ -22,7 +22,7 @@ namespace MangaChecker.Core.Defines.Parser
 
                 if (!chapter.HasValue)
                 {
-                    if (!IsBonusChapterWithoutNumber(components))
+                    if (!IsBonusChapterWithoutNumber(components) && !IsChapterWithoutNumber(components))
                         throw new Exception(
                             $"Failed to get chapter number for manga {mangaTitle}! Chapter string: {ch}");
                     
@@ -58,8 +58,26 @@ namespace MangaChecker.Core.Defines.Parser
 
         private bool IsBonusChapterWithoutNumber(IEnumerable<string> components)
         {
-            var enumerable = components as string[] ?? components.ToArray();
-            return enumerable.Contains("Bonus") || enumerable.Contains("bonus");
+            var tab = components.Select(e => e.ToLower()).ToArray();
+            return tab.Contains("bonus");
+        }
+
+        private bool IsChapterWithoutNumber(IEnumerable<string> components)
+        {
+            var tab = components.Select(e => e.ToLower()).ToList();
+            var chapterPrefixIndex = tab.IndexOf("chapter");
+            if (chapterPrefixIndex == -1)
+                return false;
+
+            if ((chapterPrefixIndex + 1) == tab.Count)
+                return true;
+
+            var nextElem = tab[chapterPrefixIndex + 1];
+            Regex regex = new Regex("([0-9][vV][0-9]{0,2})|([0-9]{1,4}\\.[0-9][vV][0-9]{0,2})\\w+",
+                RegexOptions.Compiled | RegexOptions.IgnoreCase);
+            MatchCollection matches = regex.Matches(nextElem);
+
+            return matches.Count == 0;
         }
 
         private float GetChapterNrForBonusChapter(IList<(float, string)> chapters)
