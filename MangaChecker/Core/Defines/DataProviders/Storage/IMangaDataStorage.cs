@@ -22,5 +22,7 @@ namespace MangaChecker.Core.Defines.DataProviders.Storage
         Task<IEnumerable<IManga>> GetAllUnreadMangas();
 
         IEnumerable<IManga> GetAll();
+
+        Task<IEnumerable<IManga>> GetAllAsync();
     }
 }

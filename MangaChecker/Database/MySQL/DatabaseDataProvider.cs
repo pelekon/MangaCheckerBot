@@ -170,6 +170,12 @@ namespace MangaChecker.Database.MySQL
             return db.GetObservedMangasInfoTable().ToList();
         }
 
+        public async Task<IEnumerable<IManga>> GetAllAsync()
+        {
+            await using var db = new MySQLDatabase();
+            return await db.GetObservedMangasInfoTable().ToListAsync();
+        }
+
         public async Task<IBotSettings?> GetCurrentSettingsAsync(ulong serverId)
         {
             await using var db = new MySQLDatabase();

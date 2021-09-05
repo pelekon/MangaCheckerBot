@@ -61,5 +61,10 @@ namespace MangaChecker.Database.Mock
         }
 
         public IEnumerable<IManga> GetAll() => _storage.Select(p => p.Value);
+
+        public async Task<IEnumerable<IManga>> GetAllAsync()
+        {
+            return _storage.Select(p => p.Value);
+        }
     }
 }

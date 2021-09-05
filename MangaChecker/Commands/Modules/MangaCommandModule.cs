@@ -40,12 +40,31 @@ namespace MangaChecker.Commands.Modules
             _reactionHandler.AddMessage(new PagedContentMessage(message.Id, Context.User.Id, 1, pages));
         }
 
+        [Command("manga find")]
+        [Summary("Find manga with given part of manga name (case insensitive).")]
+        public async Task FindManga(string partOfName)
+        {
+            var allMangas = await _dataStorage.GetAllAsync();
+            var matchingMangas = allMangas.Where(m =>
+                m.Name.ToLower().Contains(partOfName.ToLower())).OrderBy(m => m.Name);
+            var pages = PrepareShowAllEmbedPages(matchingMangas);
+            
+            var message = await Context.Channel.SendMessageAsync(null, false, 
+                pages.Count > 0 ? pages[0] : null);
+            if (message == null)
+                return;
+
+            await message.AddReactionAsync(new Emoji(MessageReactions.EmoteArrowLeft));
+            await message.AddReactionAsync(new Emoji(MessageReactions.EmoteArrowRight));
+            _reactionHandler.AddMessage(new PagedContentMessage(message.Id, Context.User.Id, 1, pages));
+        }
+
         private List<Embed> PrepareShowAllEmbedPages(IOrderedEnumerable<IManga> mangas)
         {
             List<EmbedBuilder> pagesBuilders = new();
             int fieldCounter = 0;
             EmbedBuilder currentEmbedBuilder = new();
-            //.WithTitle("List of all observed mangas:")
+            
             foreach (var manga in mangas)
             {
                 if (fieldCounter != 0 && fieldCounter % 6 == 0)
